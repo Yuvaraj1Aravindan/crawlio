@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import '../styles/globals.css';
+import Link from 'next/link';
 
 export default function Home() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const [apiKey, setApiKey] = useState('');
   const [options, setOptions] = useState({
     extractText: true,
     extractLinks: true,
@@ -15,9 +17,30 @@ export default function Home() {
     screenshot: false,
   });
 
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = () => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+
+    if (token && userData) {
+      setUser(JSON.parse(userData));
+      // For demo purposes, we'll use a default API key
+      // In production, you'd fetch this from the user's profile
+      setApiKey('RL5QwFrR1PkFU2d5m15MrI3LF1XhrlQH');
+    }
+  };
+
   const handleCrawl = async (e) => {
     e.preventDefault();
     if (!url) return;
+
+    if (!apiKey) {
+      setError('Please authenticate first to use the crawling service.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -28,6 +51,7 @@ export default function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': apiKey,
         },
         body: JSON.stringify({
           url,
@@ -36,8 +60,8 @@ export default function Home() {
       });
 
       const data = await response.json();
-      
-      if (data.success) {
+
+      if (data.success || data.job_id) {
         setResult(data);
       } else {
         setError(data.error || 'Crawling failed');
@@ -57,6 +81,15 @@ export default function Home() {
     }));
   };
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setApiKey('');
+    setResult(null);
+    setError(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Head>
@@ -65,11 +98,49 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/" className="text-xl font-bold text-gray-900">
+                Crawlio
+              </Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <>
+                  <span className="text-gray-700">Welcome, {user.first_name}!</span>
+                  <Link href="/dashboard" className="text-gray-700 hover:text-gray-900">
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="text-gray-700 hover:text-gray-900"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <div className="space-x-4">
+                  <Link href="/login" className="text-gray-700 hover:text-gray-900">
+                    Login
+                  </Link>
+                  <Link href="/signup" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            🕷️ Crawlio
+            Crawlio
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Powerful web crawling and scraping service with JavaScript rendering support
@@ -97,7 +168,7 @@ export default function Home() {
                   required
                 />
               </div>
-
+  
               {/* Options */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -119,7 +190,7 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-
+  
               {/* Submit Button */}
               <button
                 type="submit"
@@ -140,7 +211,7 @@ export default function Home() {
               </button>
             </form>
           </div>
-
+  
           {/* Error Display */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -157,7 +228,7 @@ export default function Home() {
               </div>
             </div>
           )}
-
+  
           {/* Results Display */}
           {result && (
             <div className="bg-white shadow-xl rounded-lg p-8">
@@ -181,7 +252,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-
+  
               {/* Extracted Data */}
               {result.data && (
                 <div className="space-y-6">
@@ -195,7 +266,7 @@ export default function Home() {
                       </div>
                     </div>
                   )}
-
+  
                   {/* Links */}
                   {result.data.links && result.data.links.length > 0 && (
                     <div>
@@ -214,7 +285,7 @@ export default function Home() {
                       </div>
                     </div>
                   )}
-
+  
                   {/* Images */}
                   {result.data.images && result.data.images.length > 0 && (
                     <div>
@@ -232,7 +303,7 @@ export default function Home() {
                       </div>
                     </div>
                   )}
-
+  
                   {/* Meta Tags */}
                   {result.data.meta && Object.keys(result.data.meta).length > 0 && (
                     <div>
@@ -248,7 +319,7 @@ export default function Home() {
                   )}
                 </div>
               )}
-
+  
               {/* Raw JSON */}
               <details className="mt-6">
                 <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
@@ -261,14 +332,12 @@ export default function Home() {
             </div>
           )}
         </div>
-
+  
         {/* Features Section */}
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="text-center">
             <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              <div className="w-6 h-6 bg-blue-600 rounded"></div>
             </div>
             <h3 className="text-lg font-semibold mb-2">Fast & Reliable</h3>
             <p className="text-gray-600">High-performance crawling with JavaScript rendering support</p>
@@ -276,9 +345,7 @@ export default function Home() {
           
           <div className="text-center">
             <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <div className="w-6 h-6 bg-blue-600 rounded"></div>
             </div>
             <h3 className="text-lg font-semibold mb-2">Flexible Extraction</h3>
             <p className="text-gray-600">Extract text, links, images, meta tags, and structured data</p>
@@ -286,9 +353,7 @@ export default function Home() {
           
           <div className="text-center">
             <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
+              <div className="w-6 h-6 bg-blue-600 rounded"></div>
             </div>
             <h3 className="text-lg font-semibold mb-2">Secure & Scalable</h3>
             <p className="text-gray-600">Enterprise-grade security with subscription management</p>
