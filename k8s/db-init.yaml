@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: crawler-db-init
+spec:
+  template:
+    spec:
+      containers:
+      - name: db-init
+        image: postgres:15
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          until pg_isready -h crawler-postgres -U crawlio_user; do
+            echo "Waiting for database..."
+            sleep 2
+          done
+          psql -h crawler-postgres -U crawlio_user -d crawler_db -c "
+          CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            api_key VARCHAR(255) UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+          CREATE TABLE IF NOT EXISTS crawl_jobs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            url TEXT NOT NULL,
+            status VARCHAR(50) DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+          "
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: crawler-secrets
+              key: DB_PASSWORD
+      restartPolicy: Never

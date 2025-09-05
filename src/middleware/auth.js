@@ -49,6 +49,21 @@ const authenticateApiKey = async (req, res, next) => {
       return res.status(401).json({ error: 'API key required' });
     }
 
+    // Allow demo API key
+    if (apiKey === 'RL5QwFrR1PkFU2d5m15MrI3LF1XhrlQH') {
+      req.user = {
+        id: 1,
+        email: 'demo@crawlio.com',
+        first_name: 'Demo',
+        last_name: 'User',
+        subscription_tier: 'free',
+        subscription_status: 'active',
+        monthly_requests_used: 0,
+        monthly_requests_limit: 1000
+      };
+      return next();
+    }
+
     const pool = getPool();
     
     // Get user from database by API key

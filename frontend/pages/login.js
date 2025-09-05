@@ -25,7 +25,8 @@ export default function Login() {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,6 +47,7 @@ export default function Login() {
         setError(data.error || 'Login failed');
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

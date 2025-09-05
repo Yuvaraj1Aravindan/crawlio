@@ -47,7 +47,8 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/crawl/url', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const response = await fetch(`${apiUrl}/api/crawl/url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +94,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Head>
-        <title>Crawlio - Web Crawling & Scraping Service</title>
+        <title>Crawler - Web Crawling & Scraping Service</title>
         <meta name="description" content="Powerful web crawling and scraping service" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -104,7 +105,7 @@ export default function Home() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="text-xl font-bold text-gray-900">
-                Crawlio
+                Crawler
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -140,7 +141,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Crawlio
+            Crawler
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Powerful web crawling and scraping service with JavaScript rendering support

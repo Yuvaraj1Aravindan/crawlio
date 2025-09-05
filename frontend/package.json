@@ -1,5 +1,5 @@
 {
-  "name": "crawlio-frontend",
+  "name": "crawler-gcp-k8s-frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {

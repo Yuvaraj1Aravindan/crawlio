@@ -27,7 +27,8 @@ export default function Signup() {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,6 +47,7 @@ export default function Signup() {
         setError(data.error || 'Registration failed');
       }
     } catch (error) {
+      console.error('Signup error:', error);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -55,8 +57,8 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Head>
-        <title>Sign Up - Crawlio</title>
-        <meta name="description" content="Create your Crawlio account" />
+        <title>Sign Up - Crawler</title>
+        <meta name="description" content="Create your Crawler account" />
       </Head>
 
       <div className="max-w-md w-full space-y-8">

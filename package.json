@@ -1,7 +1,7 @@
 {
-  "name": "crawlio",
+  "name": "crawler-gcp-k8s",
   "version": "1.0.0",
-  "description": "A powerful web crawling and scraping service like FireCrawl",
+  "description": "A powerful web crawling and scraping service - Crawler Edition",
   "main": "src/server.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",

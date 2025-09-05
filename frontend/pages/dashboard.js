@@ -31,8 +31,10 @@ export default function Dashboard() {
 
   const fetchUserData = async (token) => {
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      
       // Fetch user profile
-      const profileResponse = await fetch('/api/user/profile', {
+      const profileResponse = await fetch(`${apiUrl}/api/user/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -44,7 +46,7 @@ export default function Dashboard() {
       }
 
       // Fetch usage data
-      const usageResponse = await fetch('/api/user/usage', {
+      const usageResponse = await fetch(`${apiUrl}/api/user/usage`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -57,7 +59,7 @@ export default function Dashboard() {
 
       // Generate API key if not exists
       if (!apiKey) {
-        const keyResponse = await fetch('/api/auth/regenerate-api-key', {
+        const keyResponse = await fetch(`${apiUrl}/api/auth/regenerate-api-key`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -81,7 +83,8 @@ export default function Dashboard() {
     if (!token) return;
 
     try {
-      const response = await fetch('/api/auth/regenerate-api-key', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const response = await fetch(`${apiUrl}/api/auth/regenerate-api-key`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -120,8 +123,8 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Head>
-        <title>Dashboard - Crawlio</title>
-        <meta name="description" content="Your Crawlio dashboard" />
+        <title>Dashboard - Crawler</title>
+        <meta name="description" content="Your Crawler dashboard" />
       </Head>
 
       {/* Navigation */}
@@ -130,7 +133,7 @@ export default function Dashboard() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="text-xl font-bold text-gray-900">
-                Crawlio
+                Crawler
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -237,7 +240,7 @@ export default function Dashboard() {
               Start Crawling
             </Link>
             <button
-              onClick={() => window.open('https://docs.crawlio.com', '_blank')}
+              onClick={() => window.open('https://docs.crawler.com', '_blank')}
               className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
             >
               View Documentation

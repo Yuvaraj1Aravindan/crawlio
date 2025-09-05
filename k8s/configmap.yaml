@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crawler-config
+data:
+  NODE_ENV: "development"
+  PORT: "3003"
+  FRONTEND_PORT: "3001"
+  REDIS_URL: "redis://crawler-redis:6379"
+  DATABASE_URL: "postgresql://crawlio_user:crawler_password@crawler-postgres:5432/crawler_db"
+  JWT_SECRET: "your-jwt-secret"
+  API_KEY_SALT: "your-api-key-salt"
+  AWS_S3_BUCKET: "crawler-data"
+  USER_AGENT: "Mozilla/5.0 (compatible; Crawler/1.0; +https://crawler.com)"
+  LOG_FILE: "logs/crawler.log"
