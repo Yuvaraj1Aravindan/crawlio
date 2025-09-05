@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # VM Setup Script for Self-Hosted Deployment
-# Installs all software locally on VM (no GCP managed services)
+# Installs missing software locally on VM
 
 set -e
 
@@ -10,56 +10,69 @@ echo "🚀 Setting up VM for Self-Hosted Crawler Application"
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install required packages
-sudo apt install -y \
-    curl \
-    wget \
-    git \
-    docker.io \
-    docker-compose \
-    build-essential \
-    python3-pip \
-    nodejs \
-    npm \
-    postgresql \
-    postgresql-contrib \
-    redis-server \
-    ufw \
-    htop \
-    vim \
-    net-tools
+# Install required packages (skip if already installed)
+echo "Installing required packages..."
 
-# Install Kubernetes
-echo "Installing kubectl..."
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+# Check and install Docker if not present
+if ! command -v docker &> /dev/null; then
+    echo "Installing Docker..."
+    sudo apt install -y docker.io docker-compose
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    sudo usermod -aG docker $USER
+else
+    echo "Docker already installed"
+fi
 
-# Install Minikube
-echo "Installing Minikube..."
-curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-sudo install minikube-linux-amd64 /usr/local/bin/minikube
+# Check and install PostgreSQL if not present
+if ! command -v psql &> /dev/null; then
+    echo "Installing PostgreSQL..."
+    sudo apt install -y postgresql postgresql-contrib
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+else
+    echo "PostgreSQL already installed"
+fi
 
-# Install Helm
-echo "Installing Helm..."
-curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-sudo apt update && sudo apt install -y helm
+# Check and install Redis if not present
+if ! command -v redis-cli &> /dev/null; then
+    echo "Installing Redis..."
+    sudo apt install -y redis-server
+    sudo systemctl start redis-server
+    sudo systemctl enable redis-server
+else
+    echo "Redis already installed"
+fi
 
-# Start and enable services
-echo "Starting services..."
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-sudo systemctl start redis-server
-sudo systemctl enable redis-server
+# Install Kubernetes tools
+if ! command -v kubectl &> /dev/null; then
+    echo "Installing kubectl..."
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+else
+    echo "kubectl already installed"
+fi
 
-# Add user to docker group
-sudo usermod -aG docker $USER
+if ! command -v minikube &> /dev/null; then
+    echo "Installing Minikube..."
+    curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    sudo install minikube-linux-amd64 /usr/local/bin/minikube
+else
+    echo "Minikube already installed"
+fi
+
+if ! command -v helm &> /dev/null; then
+    echo "Installing Helm..."
+    curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+    sudo apt update && sudo apt install -y helm
+else
+    echo "Helm already installed"
+fi
 
 # Configure PostgreSQL
 echo "Configuring PostgreSQL..."
-sudo -u postgres psql -c "CREATE DATABASE crawler_db;" || echo "Database might already exist"
-sudo -u postgres psql -c "CREATE USER crawlio_user WITH PASSWORD 'crawlio_password_2024';" || echo "User might already exist"
+sudo -u postgres psql -c "CREATE DATABASE crawler_db;" 2>/dev/null || echo "Database crawler_db already exists"
+sudo -u postgres psql -c "CREATE USER crawlio_user WITH PASSWORD 'crawlio_password_2024';" 2>/dev/null || echo "User crawlio_user already exists"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE crawler_db TO crawlio_user;"
 sudo -u postgres psql -c "ALTER USER crawlio_user CREATEDB;"
 
@@ -81,13 +94,13 @@ sudo ufw allow 6379/tcp
 
 # Install cert-manager for SSL (optional)
 echo "Installing cert-manager..."
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml || echo "cert-manager installation may take a moment"
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml 2>/dev/null || echo "cert-manager may already be installed"
 
 # Install nginx ingress controller
 echo "Installing nginx ingress controller..."
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || echo "ingress-nginx repo may already exist"
 helm repo update
-helm install nginx-ingress ingress-nginx/ingress-nginx
+helm install nginx-ingress ingress-nginx/ingress-nginx 2>/dev/null || echo "nginx-ingress may already be installed"
 
 # Start Minikube
 echo "Starting Minikube..."
@@ -95,13 +108,12 @@ minikube start --driver=docker
 
 echo "✅ VM setup completed!"
 echo ""
-echo "Services installed:"
-echo "- Docker: ✅"
-echo "- PostgreSQL: ✅ (Database: crawler_db, User: crawlio_user)"
-echo "- Redis: ✅"
-echo "- Kubernetes (Minikube): ✅"
-echo "- Helm: ✅"
-echo "- Nginx Ingress: ✅"
+echo "Services status:"
+echo "- Docker: $(systemctl is-active docker)"
+echo "- PostgreSQL: $(systemctl is-active postgresql)"
+echo "- Redis: $(systemctl is-active redis-server)"
+echo "- Minikube: $(minikube status | grep -o "Running" | wc -l) services running"
 echo ""
-echo "Next steps:"
-echo "1. Run the deployment script: ./gcp/deploy.sh"
+echo "Database: crawler_db, User: crawlio_user"
+echo ""
+echo "Ready for deployment! Run: ./gcp/deploy.sh"
